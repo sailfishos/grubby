@@ -9,8 +9,8 @@ Name:       grubby
 # << macros
 
 Summary:    Command line tool for updating bootloader configs
-Version:    7.0.8
-Release:    3
+Version:    0
+Release:    1
 Group:      System/Base
 License:    GPLv2+
 URL:        http://git.fedorahosted.org/git/grubby.git
