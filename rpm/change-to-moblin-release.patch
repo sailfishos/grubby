@@ -1,0 +1,16 @@
+diff --git a/new-kernel-pkg b/new-kernel-pkg
+index 6d61446..c20cd48 100755
+--- a/new-kernel-pkg
++++ b/new-kernel-pkg
+@@ -150,9 +150,9 @@ install() {
+ 	if [ -n "$banner" ]; then
+             title="$banner ($version)"
+ 	elif [ -f /etc/redhat-release ]; then
+-	    title="$(sed 's/ release.*$//' < /etc/redhat-release) ($version)"
++	    title="$(sed -e 's/ release.*$//' -e q < /etc/moblin-release) ($version)"
+ 	else
+-	    title="Red Hat Linux ($version)"
++	    title="Moblin ($version)"
+ 	fi
+ 	$grubby --add-kernel=$bootPrefix/$kernelName-$version \
+ 	    $INITRD --copy-default $makedefault --title "$title" \

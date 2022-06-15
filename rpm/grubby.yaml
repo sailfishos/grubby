@@ -1,0 +1,29 @@
+Name: grubby
+Summary: Command line tool for updating bootloader configs
+Version: 7.0.8
+Release: 3
+Group: System/Base
+License: GPLv2+
+URL: http://git.fedorahosted.org/git/grubby.git
+Sources:
+    - "%{name}-%{version}.tar.bz2"
+Patches:
+    - change-to-moblin-release.patch
+    - more-support-code-for-syslinux.patch
+    - set-default-kernel.patch
+    - symbolic-link-to-kernel.patch
+    - grubby_add_kboot.patch
+    - support_linux_keyword.patch
+Description: |
+    grubby  is  a command line tool for updating and displaying information about 
+    the configuration files for the grub, lilo, elilo (ia64),  yaboot (powerpc)  
+    and zipl (s390) boot loaders. It is primarily designed to be used from scripts
+    which install new kernels and need to find information about the current boot 
+    environment.
+
+PkgConfigBR: 
+    - blkid
+    - glib-2.0
+    - popt
+Configure: none
+Builder: make
