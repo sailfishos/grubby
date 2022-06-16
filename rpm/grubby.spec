@@ -76,9 +76,9 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 # >> files
-%doc COPYING
-/sbin/installkernel
-/sbin/new-kernel-pkg
-/sbin/grubby
+%license COPYING
+%{_sbindir}/installkernel
+%{_sbindir}/new-kernel-pkg
+%{_sbindir}/grubby
 %doc %{_mandir}/man8/grubby.8*
 # << files
