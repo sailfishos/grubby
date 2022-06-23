@@ -1,0 +1,18 @@
+diff --git a/new-kernel-pkg b/new-kernel-pkg
+index aec7cd6..900a6eb 100755
+--- a/new-kernel-pkg
++++ b/new-kernel-pkg
+@@ -227,11 +227,11 @@ install() {
+         #Change menu label
+ 	sed -i "s/^default .*$/default vesamenu.c32/" /boot/extlinux/extlinux.conf
+ 	sed -i "s/^default=.*$//" /boot/extlinux/extlinux.conf
+-	lineno=$(sed -n "/vmlinuz-${version}/=" /boot/extlinux/extlinux.conf)
++	lineno=$(sed -n "/vmlinuz-${version}/=;/vmlinuz-${version}/q" /boot/extlinux/extlinux.conf)
+ 	if [ -n "$lineno" ] ; then
+ 		lineno=$((lineno-1))
+ 		sed -i "${lineno} s/menu label.*$/menu label MeeGo (${version})/" /boot/extlinux/extlinux.conf
+-		cp -f $bootPrefix/$kernelName-$version /boot/extlinux/
++		ln -sf ../$kernelName-$version /boot/extlinux/$kernelName-$version
+ 	fi
+ 
+         #Set as default menu

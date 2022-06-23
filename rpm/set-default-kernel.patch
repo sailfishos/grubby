@@ -1,0 +1,85 @@
+--- a/new-kernel-pkg
++++ b/new-kernel-pkg
+@@ -112,6 +112,28 @@ usage() {
+     exit 1
+ }
+ 
++setdefaultmenu() {
++    kernver=$1
++    if [ -z "$kernver" ] ; then
++        lineno=$(sed -n "/menu default/=" /boot/extlinux/extlinux.conf)
++        if [ -n "$lineno" ] ; then
++            return
++        fi
++    fi
++    # unset old menu default
++    sed -i '/.*menu default.*/d' /boot/extlinux/extlinux.conf
++    # flag new menu default
++    lineno=$(sed -n "/kernel vmlinuz-${kernver}/=" /boot/extlinux/extlinux.conf)
++    if [ -n "$lineno" ] ; then
++        for firstlineno in $lineno
++        do
++            lineno=$firstlineno
++            break
++        done
++        sed -i "${lineno} s/^.*kernel /\tmenu default\n\tkernel /" /boot/extlinux/extlinux.conf
++    fi
++}
++
+ install() {
+     # XXX kernel should be able to be specified also (or work right on ia64)
+     if [ ! -f $bootPrefix/$kernelName-$version ] ; then
+@@ -160,9 +182,9 @@ install() {
+ 	if [ -n "$banner" ]; then
+             title="$banner ($version)"
+ 	elif [ -f /etc/redhat-release ]; then
+-	    title="$(sed -e 's/ release.*$//' -e q < /etc/moblin-release) ($version)"
++	    title="$(sed -e 's/ release.*$//' -e q < /etc/meego-release) ($version)"
+ 	else
+-	    title="Moblin ($version)"
++	    title="MeeGo ($version)"
+ 	fi
+ 	$grubby --add-kernel=$bootPrefix/$kernelName-$version \
+ 	    $INITRD --copy-default $makedefault --title "$title" \
+@@ -208,10 +230,13 @@ install() {
+ 	lineno=$(sed -n "/vmlinuz-${version}/=" /boot/extlinux/extlinux.conf)
+ 	if [ -n "$lineno" ] ; then
+ 		lineno=$((lineno-1))
+-		sed -i "${lineno} s/menu label.*$/menu label Moblin (${version})/" /boot/extlinux/extlinux.conf
++		sed -i "${lineno} s/menu label.*$/menu label MeeGo (${version})/" /boot/extlinux/extlinux.conf
+ 		cp -f $bootPrefix/$kernelName-$version /boot/extlinux/
+ 	fi
+ 
++        #Set as default menu
++        setdefaultmenu "${version}"
++
+ 	if [ -n "$runSyslinux" ]; then 
+ 	    [ -n "$verbose" ] && echo "running $syslinux"
+ 	    if [ ! -x $syslinux ] ; then
+@@ -284,6 +309,9 @@ remove() {
+ 	sed -i "s/^default .*$/default vesamenu.c32/" /boot/extlinux/extlinux.conf
+ 	sed -i "s/^default=.*$//" /boot/extlinux/extlinux.conf
+ 
++        #Set default memu
++        setdefaultmenu ""
++
+ 	if [ -n "$runSyslinux" ]; then 
+ 	    [ -n "$verbose" ] && echo "running $syslinux"
+ 	    if [ ! -x $syslinux ] ; then
+--- a/Makefile
++++ b/Makefile
+@@ -36,12 +36,12 @@ test: all
+ 
+ install: all
+ 	mkdir -p $(DESTDIR)/sbin
+-	mkdir -p $(DESTDIR)/$(mandir)/man8
++	mkdir -p $(DESTDIR)/usr/share/man/man8
+ 	install -m 755 new-kernel-pkg $(DESTDIR)/sbin
+ 	install -m 755 installkernel $(DESTDIR)/sbin
+ 	if [ -f grubby ]; then \
+ 		install -m 755 grubby $(DESTDIR)/sbin ; \
+-		install -m 644 grubby.8 $(DESTDIR)/$(mandir)/man8 ; \
++		install -m 644 grubby.8 $(DESTDIR)/usr/share/man/man8 ; \
+ 	fi
+ 
+ grubby:: $(OBJECTS)

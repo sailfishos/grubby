@@ -1,0 +1,19 @@
+Index: grubby-7.0.8/new-kernel-pkg
+===================================================================
+--- grubby-7.0.8.orig/new-kernel-pkg
++++ grubby-7.0.8/new-kernel-pkg
+@@ -248,6 +248,14 @@ install() {
+     else
+ 	[ -n "$verbose" ] && echo "$syslinuxConfig does not exist, not running grubby"
+     fi
++
++    # kboot symlink handling
++    if [ -h /boot/bzImage -a -h /boot/initrd -a -h /boot/cmdline -a \
++	 "`readlink /boot/cmdline`" == "kboot.cmdline" ]; then
++	ln -sf `basename $initrdfile` /boot/initrd
++	ln -sf $kernelName-$version /boot/bzImage
++
++    fi
+ }
+ 
+ rpmposttrans()

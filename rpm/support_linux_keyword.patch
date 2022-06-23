@@ -1,0 +1,10 @@
+--- grubby-7.0.8-old/grubby.c	2013-01-31 23:33:33.260110273 +0200
++++ grubby-7.0.8-new/grubby.c	2009-10-01 11:10:28.000000000 +0300
+@@ -242,6 +242,7 @@
+     { "root",	    LT_ROOT,	    ' ' },
+     { "default",    LT_DEFAULT,	    ' ' },
+     { "kernel",	    LT_KERNEL,	    ' ' },
++    { "linux",	    LT_KERNEL,	    ' ' },
+     { "initrd",	    LT_INITRD,      ' ',	',' },
+     { "append",	    LT_KERNELARGS,  ' ' },
+     { "prompt",     LT_UNKNOWN,     ' ' },

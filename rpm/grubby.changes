@@ -1,0 +1,76 @@
+* Thu Jan 31 2013 Maciej Blomberg <maciej.blomberg@jollamobile.com> - 7.0.8
+- Support "linux" keyword in extlinux.conf
+- Fixes NEMO#179: Device doesn't boot after kernel update
+
+* Sat Jan 12 2013 Marko Saukko <marko.saukko@jollamobile.com> - 7.0.8
+- Update packaging
+
+* Tue Feb 15 2011 Chris Leech <christopher.leech@linux.intel.com> - 7.0.8
+- kboot symlink handling on kernel install/upgrade was incorrectly creating
+  an absolute link for the initrd, resulting in a failure to boot (BMC#8343)
+
+* Thu Feb 10 2011 Auke Kok <auke-jan.h.kok@intel.com> - 7.0.8
+- Add code to handle kboot symlinks properly, so that new kernels
+  installed on kboot systems will see the new kernel images (BMC#8343)
+
+* Wed Jun 23 2010 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- Use symbolic link instead of copy for kernel (BMC #2946)
+
+* Fri Mar 05 2010 Anas Nashif <anas.nashif@intel.com> - 7.0.8
+- Moblin -> MeeGo
+
+* Wed Jan 27 2010 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- Set default menu (MB#9212)
+
+* Tue Dec 01 2009 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- Use device name instead of UUID (UUID doesn't work)
+
+* Fri Nov 27 2009 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- More support code for syslinux
+
+* Wed Nov 25 2009 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- Change to Moblin release name
+
+* Mon Nov 23 2009 Yi Yang <yi.y.yang@intel.com> - 7.0.8
+- Add grubby as a seperate package
+
+* Thu Oct  1 2009 Hans de Goede <hdegoede@redhat.com> - 7.0.8-1
+- Stop using nash
+
+* Fri Sep 11 2009 Hans de Goede <hdegoede@redhat.com> - 7.0.7-1
+- Remove writing rd_plytheme=$theme to kernel args in dracut mode (hansg)
+- Add a couple of test cases for extra initrds (rstrode)
+- Allow tmplLine to be NULL in getInitrdVal (rstrode)
+
+* Fri Sep 11 2009 Peter Jones <pjones@redhat.com> - 7.0.6-1
+- Fix test case breakage from 7.0.5 (rstrode)
+
+* Fri Sep 11 2009 Peter Jones <pjones@redhat.com> - 7.0.5-1
+- Add support for plymouth as a second initrd. (rstrode)
+  Resolves: rhbz#520515
+
+* Wed Sep 09 2009 Hans de Goede <hdegoede@redhat.com> - 7.0.4-1
+- Add --dracut cmdline argument for %post generation of dracut initrd
+
+* Wed Aug 26 2009 Hans de Goede <hdegoede@redhat.com> - 7.0.3-1
+- Silence error when no /etc/sysconfig/keyboard (#517187)
+
+* Fri Aug  7 2009 Hans de Goede <hdegoede@redhat.com> - 7.0.2-1
+- Add --add-dracut-args new-kernel-pkg cmdline option
+
+* Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 7.0.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
+* Fri Jul 17 2009 Jeremy Katz <katzj@redhat.com> - 7.0.1-1
+- Fix blkid usage (#124246)
+
+* Wed Jun 24 2009 Jeremy Katz <katzj@redhat.com> - 7.0-1
+- BR libblkid-devel now instead of e2fsprogs-devel
+- Add bits to switch to using dracut for new-kernel-pkg
+
+* Wed Jun  3 2009 Jeremy Katz <katzj@redhat.com> - 6.0.86-2
+- add instructions for checking out from git
+
+* Tue Jun  2 2009 Jeremy Katz <katzj@redhat.com> - 6.0.86-1
+- initial build after splitting out from mkinitrd
+

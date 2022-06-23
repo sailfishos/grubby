@@ -1,0 +1,217 @@
+diff --git a/grubby.c b/grubby.c
+index e5f4bee..59ae341 100644
+--- a/grubby.c
++++ b/grubby.c
+@@ -35,6 +35,7 @@
+ #include <execinfo.h>
+ #include <signal.h>
+ #include <blkid/blkid.h>
++#include <linux/kdev_t.h>
+ 
+ #define DEBUG 0
+ 
+@@ -1155,6 +1156,32 @@ static int numEntries(struct grubConfig *cfg) {
+     return i;
+ }
+ 
++static int deviceMountsToHere(char * device, char * mnt) {
++    FILE * fp = NULL;
++    char line[256];
++    char * str = NULL;
++    int ret = -1;
++
++    fp = popen("/bin/mount", "r");
++    if (fp == NULL) {
++        return ret;
++    }
++
++    while (fgets(line, 255, fp)) {
++        if (strncmp(line, device, strlen(device)) == 0) {
++            str = strstr(line + strlen(device), mnt);
++            if (str != NULL) {
++                if ((*(str-1) == ' ') && (*(str+strlen(mnt)) == ' ')) {
++                    ret = 0;
++                    break;
++                }
++            }
++        }
++    }
++    pclose(fp);
++    return ret;
++}
++
+ int suitableImage(struct singleEntry * entry, const char * bootPrefix,
+ 		  int skipRemoved, int flags) {
+     struct singleLine * line;
+@@ -1217,6 +1244,11 @@ int suitableImage(struct singleEntry * entry, const char * bootPrefix,
+ 	return 0;
+ 
+     stat("/", &sb2);
++    if (MAJOR(sb2.st_dev) == 0) { // For btrfs, we must do with it specially
++        if (deviceMountsToHere(dev, "/") == 0) {
++            return 1;
++        }
++    }
+ 
+     if (sb.st_rdev != sb2.st_dev)
+         return 0;
+@@ -1407,7 +1439,7 @@ char * findBootPrefix(void) {
+ #ifdef __ia64__
+     return strdup("/boot/efi/EFI/redhat/");
+ #else
+-    return strdup("/boot");
++    return strdup("/boot/");
+ #endif
+ }
+ 
+diff --git a/new-kernel-pkg b/new-kernel-pkg
+index c20cd48..4ddc54b 100755
+--- a/new-kernel-pkg
++++ b/new-kernel-pkg
+@@ -26,6 +26,7 @@
+ PATH=/sbin:/bin:$PATH
+ 
+ lilo=/sbin/lilo
++syslinux=/sbin/extlinux
+ 
+ # some defaults that are sane for most arches
+ kernelName=vmlinuz
+@@ -40,8 +41,11 @@ fi
+ 
+ cfgGrub=""
+ cfgLilo=""
++cfgSyslinux=""
+ runLilo=""
++runSyslinux=""
+ grubConfig=""
++syslinuxConfig=""
+ 
+ ARCH=$(uname -m)
+ 
+@@ -74,9 +78,12 @@ else
+     # this leaves i?86 and x86_64
+     liloConfig=/etc/lilo.conf
+     grubConfig=$(readlink -f /etc/grub.conf 2>/dev/null)
++    syslinuxConfig="/boot/extlinux/extlinux.conf"
+     bootPrefix=/boot
+     liloFlag=lilo
+     isx86="yes"
++    syslinuxFlag=extlinux
++    runSyslinux="yes"
+ fi
+ 
+ mode=""
+@@ -136,8 +143,11 @@ install() {
+ 	return
+     fi
+ 
+-    # get the root filesystem to use
++    # get the root filesystem to use, must be device name instead of UUID
+     rootdevice=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $1; }}' /etc/fstab)
++    if [ "${rootdevice::5}" == "UUID=" ] ; then
++        rootdevice=$(blkid | awk -F":" -v pat="${rootdevice:5}" '$0 ~ pat {print $1;}')
++    fi
+ 
+     if [ -n "$mbkernel" -a -n "$cfgLilo" -a "$liloFlag" != "elilo" ]; then
+ 	[ -n "$verbose" ] && echo "multiboot specified, not updating lilo.conf"
+@@ -183,6 +193,36 @@ install() {
+ 	[ -n "$verbose" ] && echo "$liloConfig does not exist, not running grubby"
+     fi
+ 
++    if [ -n "$cfgSyslinux" ]; then
++	[ -n "$verbose" ] && echo "adding $version to $syslinuxConfig"
++
++	$grubby --add-kernel=$bootPrefix/$kernelName-$version $INITRD \
++		--copy-default $makedefault --title $version \
++		${mbkernel:+--add-multiboot="$mbkernel"} ${mbargs:+--mbargs="$mbargs"} \
++		--args="root=$rootdevice $kernargs" --remove-kernel="TITLE=$version" \
++		--$syslinuxFlag --bad-image-okay
++
++        #Change menu label
++	sed -i "s/^default .*$/default vesamenu.c32/" /boot/extlinux/extlinux.conf
++	sed -i "s/^default=.*$//" /boot/extlinux/extlinux.conf
++	lineno=$(sed -n "/vmlinuz-${version}/=" /boot/extlinux/extlinux.conf)
++	if [ -n "$lineno" ] ; then
++		lineno=$((lineno-1))
++		sed -i "${lineno} s/menu label.*$/menu label Moblin (${version})/" /boot/extlinux/extlinux.conf
++		cp -f $bootPrefix/$kernelName-$version /boot/extlinux/
++	fi
++
++	if [ -n "$runSyslinux" ]; then 
++	    [ -n "$verbose" ] && echo "running $syslinux"
++	    if [ ! -x $syslinux ] ; then
++		[ -n "$verbose" ] && echo "$syslinux does not exist"
++	    else
++		$syslinux --update /boot/extlinux > /dev/null 2>&1
++	    fi
++	fi
++    else
++	[ -n "$verbose" ] && echo "$syslinuxConfig does not exist, not running grubby"
++    fi
+ }
+ 
+ rpmposttrans()
+@@ -235,6 +275,26 @@ remove() {
+     else
+ 	[ -n "$verbose" ] && echo "$liloConfig does not exist, not running grubby"
+     fi
++
++    if [ -n "$cfgSyslinux" ]; then
++	[ -n "$verbose" ] && echo "removing $version from $syslinuxConfig"
++	$grubby --remove-kernel=$bootPrefix/$kernelName-$version	    \
++		     --$syslinuxFlag
++        rm -f /boot/extlinux/$kernelName-$version
++	sed -i "s/^default .*$/default vesamenu.c32/" /boot/extlinux/extlinux.conf
++	sed -i "s/^default=.*$//" /boot/extlinux/extlinux.conf
++
++	if [ -n "$runSyslinux" ]; then 
++	    [ -n "$verbose" ] && echo "running $syslinux"
++	    if [ ! -x $syslinux ] ; then
++		[ -n "$verbose" ] && echo "$syslinux does not exist"
++	    else
++		$syslinux --update /boot/extlinux > /dev/null 2>&1
++	    fi
++	fi
++    else
++	[ -n "$verbose" ] && echo "$syslinuxConfig does not exist, not running grubby"
++    fi
+ }
+ 
+ update() {
+@@ -265,6 +325,28 @@ update() {
+     else
+ 	[ -n "$verbose" ] && echo "$liloConfig does not exist, not running grubby"
+     fi
++
++    if [ -n "$cfgSyslinux" ]; then
++	[ -n "$verbose" ] && echo "updating $version from $syslinuxConfig"
++	$grubby --update-kernel=$bootPrefix/$kernelName-$version \
++	    ${kernargs:+--args="$kernargs"} \
++	    ${removeargs:+--remove-args="$removeargs"}	\
++		     --$syslinuxFlag
++	rm -f /boot/extlinux/vmlinuz-`/bin/uname -r`
++	sed -i "s/^default .*$/default vesamenu.c32/" /boot/extlinux/extlinux.conf
++	sed -i "s/^default=.*$//" /boot/extlinux/extlinux.conf
++
++	if [ -n "$runSyslinux" ]; then 
++	    [ -n "$verbose" ] && echo "running $syslinux"
++	    if [ ! -x $syslinux ] ; then
++		[ -n "$verbose" ] && echo "$syslinux does not exist"
++	    else
++		$syslinux --update /boot/extlinux > /dev/null 2>&1
++	    fi
++	fi
++    else
++	[ -n "$verbose" ] && echo "$syslinuxConfig does not exist, not running grubby"
++    fi
+ }
+ 
+ mkinitrd() {
+@@ -494,6 +576,7 @@ fi
+ 
+ [ -n "$grubConfig" ] && [ -f "$grubConfig" ] && cfgGrub=1;
+ [ -n "$liloConfig" ] && [ -f "$liloConfig" ] && cfgLilo=1;
++[ -n "$syslinuxConfig" ] && [ -f "$syslinuxConfig" ] && cfgSyslinux=1;
+ 
+ # if we have a lilo config on an x86 box, see if the default boot loader
+ # is lilo to determine if it should be run
