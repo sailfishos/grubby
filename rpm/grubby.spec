@@ -25,26 +25,12 @@ which install new kernels and need to find information about the current boot
 environment.
 
 %prep
-%setup -q -n %{name}-%{version}/%{name}
-
-# change-to-moblin-release.patch
-%patch0 -p1
-# more-support-code-for-syslinux.patch
-%patch1 -p1
-# set-default-kernel.patch
-%patch2 -p1
-# symbolic-link-to-kernel.patch
-%patch3 -p1
-# grubby_add_kboot.patch
-%patch4 -p1
-# support_linux_keyword.patch
-%patch5 -p1
+%autosetup -p1 -n %{name}-%{version}/%{name}
 
 %build
-make %{?jobs:-j%jobs}
+%make_build
 
 %install
-rm -rf %{buildroot}
 %make_install
 
 %files
