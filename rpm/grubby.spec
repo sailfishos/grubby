@@ -6,7 +6,6 @@ Group:      System/Base
 License:    GPLv2+
 URL:        http://git.fedorahosted.org/git/grubby.git
 Source0:    %{name}-%{version}.tar.bz2
-Source100:  grubby.yaml
 Patch0:     change-to-moblin-release.patch
 Patch1:     more-support-code-for-syslinux.patch
 Patch2:     set-default-kernel.patch
